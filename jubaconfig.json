@@ -1,0 +1,10 @@
+{
+  "method": "CA",
+  "converter": {
+    "binary_types": {},
+    "binary_rules": []
+  },
+  "parameter": {
+      "regularization_weight": 0.01
+  }
+}
