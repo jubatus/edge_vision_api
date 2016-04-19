@@ -6,3 +6,4 @@ Jinja2>=2.8
 plyvel>=0.9
 msgpack-python>=0.4.6
 jubatus>=0.8.2
+scikit-image>=0.12.3

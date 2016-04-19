@@ -10,14 +10,19 @@ from jubatus.common import Datum
 import hashlib
 import subprocess
 
-api = Blueprint('v0', __name__, url_prefix="/v0")
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+
+from skimage.feature import hog
+from skimage import data, color, exposure
+from skimage.io import imread
 
 host = "127.0.0.1"
 port = 9199
 name = "vision"
 
 juba = subprocess.Popen("jubaclassifier -f jubaconfig.json -p {port}".format(port=port).split(" "))
+
+api = Blueprint('v0', __name__, url_prefix="/v0")
 
 @api.route("/predict", methods=["post"])
 def predict():
@@ -26,17 +31,21 @@ def predict():
     handler = request.files['file']
     ext = os.path.splitext(handler.filename)
     filename = str(uuid4()) + ext[-1]
-    handler.save(os.path.join("./tmp", filename))
+    filepath = os.path.join("./tmp", filename)
+    handler.save(filepath)
 
     client = jubatus.Classifier(host, port, name)
-    with open(os.path.join("./tmp", filename)) as f:
-        ret = client.classify([Datum({"image": f.read()})])
-        print(ret)
+    image = color.rgb2gray(imread(filepath))
+    fd, hog_image = hog(image, orientations=8, pixels_per_cell=(16, 16),
+                        cells_per_block=(1, 1), visualise=True)
+    fd_list = fd.tolist()
+    print(fd_list)
+
+    d = {}
+    for i, hist in enumerate(fd_list):
+        d[str(i)] = hist
 
     return jsonify({
             "status": "ok",
-            "result": {
-                "front": 1.0,
-                "back": 0.2
-            }
+            "result": client.classify([Datum(d)])[0]
     })

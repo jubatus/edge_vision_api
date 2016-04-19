@@ -1,10 +1,11 @@
 {
-  "method": "CA",
   "converter": {
-    "binary_types": {},
-    "binary_rules": []
+      "num_rules": [
+          { "key": "*",  "type": "num" }
+      ]
   },
+  "method": "AROW",
   "parameter": {
-      "regularization_weight": 0.01
+      "regularization_weight": 0.03
   }
 }
