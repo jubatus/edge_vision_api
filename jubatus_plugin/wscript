@@ -8,22 +8,21 @@ def configure(conf):
     conf.env.CXXFLAGS += ['-O2', '-Wall', '-g', '-pipe']
     conf.load('compiler_cxx')
 
+    conf.check_cxx(lib = 'dlib')
     conf.check_cxx(lib = 'msgpack')
-    conf.check_cxx(lib = 'opencv_core')
-
-def make_test(bld, use, src):
-    bld.program(
-        features = 'gtest',
-        source = src,
-        target = src[0:src.rindex('.')],
-        use = use,
-    )
+    conf.check_cxx(lib = 'atlas')
+    conf.check_cxx(lib = 'lapack')
 
 def build(bld):
     bld.shlib(
-          source = 'opencv.cpp',
-          target = 'opencv_feature',
-          use = 'OPENCV_CORE JUBATUS_CORE MSGPACK',
+          source = 'face_expr.cpp',
+          target = 'face_expr',
+          use = 'JUBATUS_CORE MSGPACK DLIB',
     )
-    #make_test(bld, 'JUBATUS_CORE opencv', 'opencv_test.cpp')
+
+    bld.program(
+        source = 'test.cpp',
+        target = 'test',
+        use = 'face_expr DLIB ATLAS LAPACK'
+    )
 

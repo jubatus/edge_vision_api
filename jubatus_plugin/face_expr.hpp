@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include "jubatus/util/lang/scoped_ptr.h"
+#include "jubatus/util/lang/shared_ptr.h"
 #include "jubatus/core/fv_converter/binary_feature.hpp"
 
 namespace jubatus {
@@ -13,12 +13,8 @@ namespace fv_converter {
 
 class face_expr : public jubatus::core::fv_converter::binary_feature {
  public:
-  virtual ~face_expr() {
-  }
-  face_expr(const std::string& cb_filename,
-         int scale,
-         const std::string& detector,
-         const std::string& extractor);
+  virtual ~face_expr() {}
+  face_expr();
 
   void add_feature(
       const std::string& key,
@@ -28,7 +24,7 @@ class face_expr : public jubatus::core::fv_converter::binary_feature {
  private:
   class impl_;
   impl_* create_model();
-  jubatus::util::lang::scoped_ptr<impl_> model_;
+  jubatus::util::lang::shared_ptr<impl_> model_;
 };
 
 }  // namespace fv_converter
