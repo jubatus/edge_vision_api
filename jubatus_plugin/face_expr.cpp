@@ -8,7 +8,6 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/image_processing.h>
-#include <dlib/gui_widgets.h>
 #include <dlib/image_io.h>
 #include <iostream>
 
@@ -19,6 +18,7 @@
 #include "jubatus/util/lang/cast.h"
 
 #include "face_expr.hpp"
+#include "face_extractor.hpp"
 #include <iostream>
 
 using std::cout;
@@ -36,20 +36,12 @@ namespace fv_converter {
 
 namespace {
 
-inline double sgn(double x) {
-  if (x < 0) return -1;
-  if (x > 0) return 1;
-  return 0;
-}
-
-
 }  // namespace
 
 class face_expr::impl_ {
  public:
-  impl_()
-    : detector_(dlib::get_frontal_face_detector()) {
-    dlib::deserialize("shape_predictor_68_face_landmarks.dat") >> sp_;
+  impl_(const char* modelpath)
+    : dt_(), ld_(modelpath) {
   }
 
   virtual void add_feature(
@@ -57,62 +49,52 @@ class face_expr::impl_ {
       const string& value,
       vector<pair<string, float> >& ret_fv) {
     // write data as file(FIXME!)
-    std::string filepath = "/tmp/" + key;
+    size_t idx = key.find_last_of("/");
+    std::string filename = key.substr(idx+1, key.length() - idx - 1);
+    std::string filepath = "/tmp/" + filename;
     std::ofstream ofs;
-    ofs.open(filepath.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
+    ofs.open(filepath.c_str(),
+             std::ios::out |
+             std::ios::binary |
+             std::ios::trunc);
     ofs << value;
 
-    dlib::image_window win, win_faces;
     dlib::array2d<dlib::rgb_pixel> img;
     dlib::load_image(img, filepath);
-    dlib::pyramid_up(img);
-    std::vector<dlib::rectangle> dets = detector_(img);
-    cout << "Number of faces detected: " << dets.size() << endl;
+    //dlib::pyramid_up(img);  // up-scan
 
-    std::vector<dlib::full_object_detection> shapes;
-    for (size_t j = 0; j < dets.size(); ++j) {
-      dlib::full_object_detection shape = sp_(img, dets[j]);
-      std::cout << "number of parts: "<< shape.num_parts() << endl;
-      std::cout << "pixel position of first part:  " << shape.part(0) << endl;
-      std::cout << "pixel position of second part: " << shape.part(1) << endl;
-      // You get the idea, you can get all the face part locations if
-      // you want them.  Here we just store them in shapes so we can
-      // put them on the screen.
-      shapes.push_back(shape);
+    util::data::optional<dlib::rectangle> det = dt_.get_largest_face(img);
+    if (!det) {
+      std::cout << "no face detected" << std::endl;
+      return;
     }
 
-    win.clear_overlay();
-    win.set_image(img);
-    win.add_overlay(dlib::render_face_detections(shapes));
+    const float left = static_cast<float>(det->left());
+    const float top = static_cast<float>(det->top());
+    const float width = static_cast<float>(det->width());
+    const float height = static_cast<float>(det->height());
 
-    // value should be a jpeg file binary
-    /*
-    ret_fv.push_back(make_pair("bin#" + key + "_" +
-                               lexical_cast<string>(i),
-                               dence_feature_vector[i]));
-    */
+    const std::vector<dlib::point> landmarks = ld_.detect(img, *det);
+    for (size_t i = 0; i < landmarks.size(); ++i) {
+      const float x = (landmarks[i].x() - left) / width;
+      const float y = (landmarks[i].y() - top) / height;
 
-
-    dlib::array<dlib::array2d<dlib::rgb_pixel> > face_chips;
-    dlib::extract_image_chips(img, dlib::get_face_chip_details(shapes), face_chips);
-    win_faces.set_image(tile_images(face_chips));
-
-    cout << "Hit enter to process the next image..." << endl;
-    std::cin.get();
+      ret_fv.push_back(make_pair("bin#" + filename + "_" +
+                                 lexical_cast<string>(i) + "x",
+                                 x));
+      ret_fv.push_back(make_pair("bin#" + filename + "_" +
+                                 lexical_cast<string>(i) + "y",
+                                 y));
+      // cout << "point: (" << x << ", " << y << ")"<< endl;
+    }
   }
-
  private:
-  dlib::frontal_face_detector detector_;
-  dlib::shape_predictor sp_;
+  face_expression::face_detector dt_;
+  face_expression::landmark_detector ld_;
 };
 
-face_expr::impl_* face_expr::create_model() {
-  return new face_expr::impl_();
-}
-
-face_expr::face_expr()
-  : model_(create_model()) {
-  //cv::initModule_nonfree();
+face_expr::face_expr(const char* modelpath)
+  : model_(new face_expr::impl_(modelpath)) {
 }
 
 void face_expr::add_feature(
@@ -128,13 +110,15 @@ void face_expr::add_feature(
 
 extern "C" {
 
-  jubatus::plugin::fv_converter::face_expr* create(
-      const std::map<std::string, std::string>& params) {
-    return new jubatus::plugin::fv_converter::face_expr();
+jubatus::plugin::fv_converter::face_expr* create(
+    const std::map<std::string, std::string>& params) {
+  std::string param =
+      jubatus::core::fv_converter::get_with_default(params, "model", "");
+  return new jubatus::plugin::fv_converter::face_expr(param.c_str());
 }
 
 string version() {
   return "0.0.1";
 }
 
-}
+}  // extern "C"

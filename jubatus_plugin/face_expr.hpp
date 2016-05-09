@@ -14,7 +14,7 @@ namespace fv_converter {
 class face_expr : public jubatus::core::fv_converter::binary_feature {
  public:
   virtual ~face_expr() {}
-  face_expr();
+  face_expr(const char* modelpath);
 
   void add_feature(
       const std::string& key,
@@ -23,7 +23,6 @@ class face_expr : public jubatus::core::fv_converter::binary_feature {
 
  private:
   class impl_;
-  impl_* create_model();
   jubatus::util::lang::shared_ptr<impl_> model_;
 };
 

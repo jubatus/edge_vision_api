@@ -1,11 +1,27 @@
 {
   "converter": {
+      "binary_types": {
+          "face": {
+              "method": "dynamic",
+              "path": "libface_expr.so",
+              "model": "/home/kumagi/develop/edge_vision_api/jubatus_plugin/shape_predictor_68_face_landmarks.dat",
+              "function": "create"
+          }
+      },
       "num_rules": [
           { "key": "*",  "type": "num" }
+      ],
+      "binary_rules": [
+          { "key": "*",  "type": "face" }
       ]
   },
-  "method": "AROW",
+  "method": "NN",
   "parameter": {
-      "regularization_weight": 0.03
+    "method": "euclid_lsh",
+    "parameter": {
+      "hash_num": 512
+    },
+    "nearest_neighbor_num": 4,
+    "local_sensitivity": 1
   }
 }

@@ -5,24 +5,40 @@ def options(opt):
     opt.load('compiler_cxx')
 
 def configure(conf):
+    conf.env.JUBATUS_PLUGIN_DIR = conf.env['LIBDIR'] + '/jubatus/plugin'
     conf.env.CXXFLAGS += ['-O2', '-Wall', '-g', '-pipe']
     conf.load('compiler_cxx')
 
     conf.check_cxx(lib = 'dlib')
+    conf.check_cxx(lib = 'jubatus_core')
     conf.check_cxx(lib = 'msgpack')
     conf.check_cxx(lib = 'atlas')
     conf.check_cxx(lib = 'lapack')
+    conf.check_cxx(lib = 'blas')
 
 def build(bld):
     bld.shlib(
-          source = 'face_expr.cpp',
-          target = 'face_expr',
-          use = 'JUBATUS_CORE MSGPACK DLIB',
+        source = 'face_expr.cpp',
+        target = 'face_expr',
+        install_path = bld.env.JUBATUS_PLUGIN_DIR,
+        use = 'JUBATUS_CORE MSGPACK DLIB ATLAS LAPACK',
     )
 
     bld.program(
         source = 'test.cpp',
         target = 'test',
-        use = 'face_expr DLIB ATLAS LAPACK'
+        use = 'JUBATUS_CORE face_expr DLIB ATLAS LAPACK'
+    )
+
+    bld.program(
+        source = 'extract_test.cpp',
+        target = 'extract_test',
+        use = 'JUBATUS_CORE face_expr DLIB ATLAS LAPACK BLAS'
+    )
+
+    bld.program(
+        source = 'jubatest.cpp',
+        target = 'jubatest',
+        use = 'JUBATUS_CORE face_expr DLIB ATLAS LAPACK'
     )
 
