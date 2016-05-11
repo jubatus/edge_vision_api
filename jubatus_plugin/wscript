@@ -21,7 +21,7 @@ def build(bld):
         source = 'face_expr.cpp',
         target = 'face_expr',
         install_path = bld.env.JUBATUS_PLUGIN_DIR,
-        use = 'JUBATUS_CORE MSGPACK DLIB ATLAS LAPACK',
+        use = 'JUBATUS_CORE MSGPACK DLIB ATLAS LAPACK CBLAS',
     )
 
     bld.program(
