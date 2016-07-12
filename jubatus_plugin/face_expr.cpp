@@ -48,7 +48,7 @@ class face_expr::impl_ {
       const string& key,
       const string& value,
       vector<pair<string, float> >& ret_fv) {
-    // write data as file(FIXME!)
+    // writing data as file(FIXME!)
     size_t idx = key.find_last_of("/");
     std::string filename = key.substr(idx+1, key.length() - idx - 1);
     std::string filepath = "/tmp/" + filename;
